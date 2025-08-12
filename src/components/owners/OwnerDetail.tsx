@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { OwnerDto, PropertyDto } from '@/types/api';
 import { api } from '@/lib/api-client';
 import { formatDate } from '@/lib/formatters';
+import { ClientDate } from '../ui/ClientDate';
 
 interface OwnerDetailProps {
   id: string;
@@ -125,28 +126,19 @@ export default function OwnerDetail({ id }: OwnerDetailProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-1">
-              {owner.photo && owner.photo.trim() !== '' ? (
-                <Image 
-                  src={owner.photo} 
-                  alt={`Foto de ${owner.name}`}
-                  className="w-full h-auto rounded-lg shadow-md"
-                  width={300}
-                  height={300}
-                  onError={(e) => {
-                    // Fallback si la imagen no se puede cargar
-                    const imgElement = e.target as HTMLImageElement;
-                    imgElement.style.display = 'none';
-                    const parent = imgElement.parentElement;
-                    if (parent) {
-                      parent.innerHTML = '<div class="bg-gray-200 w-full h-64 rounded-lg flex items-center justify-center"><span class="text-gray-500">Error al cargar imagen</span></div>';
-                    }
-                  }}
-                />
-              ) : (
-                <div className="bg-gray-200 w-full h-64 rounded-lg flex items-center justify-center">
-                  <span className="text-gray-500">Sin foto</span>
-                </div>
-              )}
+              <Image 
+                src={owner.photo || '/default-avatar.svg'} 
+                alt={`Foto de ${owner.name}`}
+                className="w-full h-auto rounded-lg shadow-md"
+                width={300}
+                height={300}
+                onError={(e) => {
+                  // Fallback a imagen por defecto si hay error
+                  const target = e.target as HTMLImageElement;
+                  target.onerror = null; // Prevenir loops de error
+                  target.src = '/default-avatar.svg';
+                }}
+              />
             </div>
 
             <div className="md:col-span-2">
@@ -157,7 +149,7 @@ export default function OwnerDetail({ id }: OwnerDetailProps) {
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Fecha de Nacimiento</h3>
-                  <p className="mt-1 text-lg">{formatDate(owner.birthDate)}</p>
+                  <p className="mt-1 text-lg"><ClientDate date={owner.birthDate} /></p>
                 </div>
                 <div className="md:col-span-2">
                   <h3 className="text-sm font-medium text-gray-500">Dirección</h3>
@@ -165,11 +157,11 @@ export default function OwnerDetail({ id }: OwnerDetailProps) {
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Creado</h3>
-                  <p className="mt-1 text-sm text-gray-600">{formatDate(owner.createdAt)}</p>
+                  <p className="mt-1 text-sm text-gray-600"><ClientDate date={owner.createdAt} /></p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Actualizado</h3>
-                  <p className="mt-1 text-sm text-gray-600">{formatDate(owner.updatedAt)}</p>
+                  <p className="mt-1 text-sm text-gray-600"><ClientDate date={owner.updatedAt} /></p>
                 </div>
               </div>
             </div>

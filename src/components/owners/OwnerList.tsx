@@ -7,6 +7,7 @@ import { OwnerDto } from '@/types/api';
 import { api } from '@/lib/api-client';
 import { formatDate } from '@/lib/formatters';
 import { Button } from '../ui/Button';
+import { ClientDate } from '../ui/ClientDate';
 
 interface OwnerListProps {
   owners?: OwnerDto[];
@@ -172,17 +173,21 @@ export default function OwnerList({ owners: initialOwners, onDelete }: OwnerList
               <tr key={owner.id} className='hover:bg-gray-50 dark:hover:bg-gray-800'>
                 <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white'>
                   <div className="flex items-center">
-                    {owner.photo && (
-                      <div className="flex-shrink-0 h-10 w-10 mr-4">
-                        <Image 
-                          className="h-10 w-10 rounded-full object-cover" 
-                          src={owner.photo} 
-                          alt={`Foto de ${owner.name}`}
-                          width={40}
-                          height={40} 
-                        />
-                      </div>
-                    )}
+                    <div className="flex-shrink-0 h-10 w-10 mr-4">
+                      <Image 
+                        className="h-10 w-10 rounded-full object-cover" 
+                        src={owner.photo || '/default-avatar.svg'} 
+                        alt={`Foto de ${owner.name}`}
+                        width={40}
+                        height={40}
+                        onError={(e) => {
+                          // Fallback a imagen por defecto si hay error
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null; // Prevenir loops de error
+                          target.src = '/default-avatar.svg';
+                        }}
+                      />
+                    </div>
                     {owner.name}
                   </div>
                 </td>
@@ -190,7 +195,7 @@ export default function OwnerList({ owners: initialOwners, onDelete }: OwnerList
                   {owner.address}
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400'>
-                  {formatDate(owner.birthDate)}
+                  <ClientDate date={owner.birthDate} />
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2'>
                   <Link href={`/owners/${owner.id}`}>

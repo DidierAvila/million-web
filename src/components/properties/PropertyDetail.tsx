@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { PropertyDto, PropertyImageDto, PropertyTraceDto } from '@/types/api';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { Button } from '../ui/Button';
+import { ClientDate } from '../ui/ClientDate';
 
 interface PropertyDetailProps {
   property: PropertyDto;
@@ -132,7 +133,7 @@ export function PropertyDetail({
                     <li key={trace.id} className='p-4'>
                       <div className='flex justify-between'>
                         <span className='font-medium'>{trace.name}</span>
-                        <span className='text-gray-500'>{formatDate(trace.dateSale)}</span>
+                        <span className='text-gray-500'><ClientDate date={trace.dateSale} /></span>
                       </div>
                       <div className='mt-1 flex justify-between'>
                         <span className='text-sm text-gray-500'>Valor: {formatCurrency(trace.value)}</span>
