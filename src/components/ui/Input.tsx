@@ -1,68 +1,57 @@
-import React, { forwardRef } from 'react';
+'use client';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label: string;
+import { forwardRef } from 'react';
+import { cn } from '@/lib/utils';
+
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string;
   error?: string;
-  helperText?: string;
+  description?: string;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, helperText, className = '', ...props }, ref) => {
-    const inputId = props.id || `input-${Math.random().toString(36).substr(2, 9)}`;
-    const errorId = `${inputId}-error`;
-    const helperId = `${inputId}-helper`;
-
+  ({ className, type = 'text', label, error, description, id, required, ...props }, ref) => {
+    const inputId = id || `input-${Math.random().toString(36).substring(2, 9)}`;
+    
     return (
-      <div className="w-full">
-        <label
-          htmlFor={inputId}
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-        >
-          {label}
-          {props.required && (
-            <span className="text-red-500 ml-1" aria-label="requerido">
-              *
-            </span>
-          )}
-        </label>
+      <div className='w-full'>
+        {label && (
+          <label
+            htmlFor={inputId}
+            className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'
+          >
+            {label} {required && <span className='text-red-500'>*</span>}
+          </label>
+        )}
         
         <input
-          ref={ref}
+          type={type}
+          className={cn(
+            'flex w-full rounded-md border px-3 py-2 text-sm',
+            'border-gray-300 dark:border-gray-600',
+            'bg-white dark:bg-gray-800',
+            'text-gray-900 dark:text-gray-100',
+            'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'disabled:cursor-not-allowed disabled:opacity-50',
+            error && 'border-red-500 focus:ring-red-500',
+            className
+          )}
           id={inputId}
-          className={`
-            w-full px-3 py-2 border rounded-md shadow-sm
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-            disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed
-            transition-colors duration-200
-            ${error 
-              ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
-              : 'border-gray-300 dark:border-gray-600'
-            }
-            ${className}
-            dark:bg-gray-800 dark:text-white dark:placeholder-gray-400
-          `}
+          ref={ref}
           aria-invalid={error ? 'true' : 'false'}
-          aria-describedby={`${error ? errorId : ''} ${helperText ? helperId : ''}`.trim()}
+          aria-describedby={error ? `${inputId}-error` : description ? `${inputId}-description` : undefined}
           {...props}
         />
         
         {error && (
-          <p
-            id={errorId}
-            className="mt-1 text-sm text-red-600 dark:text-red-400"
-            role="alert"
-            aria-live="polite"
-          >
+          <p className='mt-1 text-sm text-red-600 dark:text-red-400' id={`${inputId}-error`}>
             {error}
           </p>
         )}
         
-        {helperText && !error && (
-          <p
-            id={helperId}
-            className="mt-1 text-sm text-gray-500 dark:text-gray-400"
-          >
-            {helperText}
+        {description && !error && (
+          <p className='mt-1 text-sm text-gray-500 dark:text-gray-400' id={`${inputId}-description`}>
+            {description}
           </p>
         )}
       </div>

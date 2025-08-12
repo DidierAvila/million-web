@@ -1,59 +1,89 @@
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { AuthService } from '@/services/auth';
-import { LoginCredentials, LoginResponse } from '@/types/auth';
+'use client';
 
-export const useAuth = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { api } from '@/lib/api-client';
+
+// Define el tipo para el contexto de autenticación
+interface AuthContextType {
+  isAuthenticated: boolean;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+}
+
+// Crea el contexto
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Provider component
+export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const login = async (credentials: LoginCredentials): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response: LoginResponse = await AuthService.login(credentials);
-
-      if (response.success && response.token && response.user) {
-        AuthService.saveAuthData(response.token, response.user);
-        router.push('/dashboard'); // Redirigir al dashboard después del login
-        return true;
-      } else {
-        setError(response.message || 'Error en el inicio de sesión');
-        return false;
+  // Comprobar el estado de autenticación al cargar
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const auth = await api.auth.isAuthenticated();
+        setIsAuthenticated(auth);
+        
+        // Redirigir si es necesario
+        if (!auth && !isPublicRoute(pathname)) {
+          router.push('/login');
+        }
+      } catch (error) {
+        console.error('Error al verificar autenticación:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      setError(errorMessage);
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+    
+    checkAuth();
+  }, [pathname, router]);
 
-  const logout = async (): Promise<void> => {
-    setIsLoading(true);
+  // Función para iniciar sesión
+  const login = async (userName: string, password: string) => {
+    setLoading(true);
     try {
-      await AuthService.logout();
-      router.push('/login');
-    } catch (err) {
-      console.error('Error durante logout:', err);
+      await api.auth.login({ userName, password });
+      setIsAuthenticated(true);
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Error de autenticación:', error);
+      throw error;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const clearError = (): void => {
-    setError(null);
+  // Función para cerrar sesión
+  const logout = () => {
+    api.auth.logout();
+    setIsAuthenticated(false);
+    router.push('/login');
   };
 
-  return {
-    login,
-    logout,
-    isLoading,
-    error,
-    clearError,
-    isAuthenticated: AuthService.isAuthenticated(),
-  };
-};
+  return React.createElement(
+    AuthContext.Provider, 
+    { value: { isAuthenticated, loading, login, logout } },
+    children
+  );
+}
+
+// Hook personalizado para usar el contexto de autenticación
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
+  }
+  return context;
+}
+
+// Función para determinar si una ruta es pública
+function isPublicRoute(pathname: string | null) {
+  const publicRoutes = ['/login', '/register', '/dashboard', '/'];
+  return publicRoutes.includes(pathname || '') || (pathname || '').startsWith('/dashboard');
+}

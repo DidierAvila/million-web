@@ -64,8 +64,8 @@ src/
 
 ### Credenciales de Prueba
 ```
-Email: admin@example.com
-Contraseña: password123
+Email: alejo@gmail.com
+Contraseña: 123456
 ```
 
 ### Flujo de Autenticación

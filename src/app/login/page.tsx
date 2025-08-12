@@ -1,34 +1,28 @@
-import { Metadata } from 'next';
-import { LoginForm } from '@/components/LoginForm';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Iniciar Sesión - Million Web',
-  description: 'Inicia sesión en tu cuenta de Million Web',
-};
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { LoginForm } from '@/components/LoginForm';
+import { api } from '@/lib/api-client';
 
 export default function LoginPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Si el usuario ya está autenticado, redirigir al dashboard
+    const checkAuth = async () => {
+      const isAuth = await api.auth.isAuthenticated();
+      if (isAuth) {
+        router.push('/dashboard');
+      }
+    };
+    
+    checkAuth();
+  }, [router]);
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="text-center">
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            Million Web
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Plataforma de desarrollo web moderna
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <LoginForm />
-      </div>
-
-      <div className="mt-8 text-center">
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          © 2025 Million Web. Todos los derechos reservados.
-        </p>
-      </div>
+    <div className='min-h-screen flex items-center justify-center px-4 py-12'>
+      <LoginForm />
     </div>
   );
 }

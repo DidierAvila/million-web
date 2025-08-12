@@ -1,216 +1,337 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { AuthService } from '@/services/auth';
-import { useAuth } from '@/hooks/useAuth';
+import { useState, useEffect } from 'react';
+import { api } from '@/lib/api-client';
+import { PropertyDto, OwnerDto } from '@/types/api';
+import Link from 'next/link';
+import { PropertyCard } from '@/components/properties/PropertyCard';
 import { Button } from '@/components/ui/Button';
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-}
+import { formatCurrency } from '@/lib/formatters';
+import { DashboardStats } from '@/components/dashboard/DashboardStats';
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const { logout, isLoading } = useAuth();
-  const router = useRouter();
+  const [properties, setProperties] = useState<PropertyDto[]>([]);
+  const [owners, setOwners] = useState<OwnerDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  // Verificar si el usuario está autenticado
+  useEffect(() => {
+    // Verificar estado inicial de manera asíncrona
+    const checkInitialAuth = async () => {
+      const isAuth = await api.auth.isAuthenticated();
+      setIsAuthenticated(isAuth);
+    };
+    
+    checkInitialAuth();
+    
+    // Escuchar cambios en el estado de autenticación
+    const handleAuthChange = async (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail?.isAuthenticated !== undefined) {
+        setIsAuthenticated(customEvent.detail.isAuthenticated);
+      } else {
+        const isAuth = await api.auth.isAuthenticated();
+        setIsAuthenticated(isAuth);
+      }
+    };
+    
+    window.addEventListener('auth-state-changed', handleAuthChange);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('auth-state-changed', handleAuthChange);
+    };
+  }, []);
 
   useEffect(() => {
-    // Verificar si el usuario está autenticado
-    if (!AuthService.isAuthenticated()) {
-      router.push('/login');
-      return;
-    }
-
-    // Obtener datos del usuario del localStorage
-    const userData = localStorage.getItem('user-data');
-    if (userData) {
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      setError(null);
+      
       try {
-        setUser(JSON.parse(userData));
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        router.push('/login');
+        // Cargar propiedades y propietarios en paralelo
+        const [propertiesData, ownersData] = await Promise.all([
+          api.properties.getAll(),
+          api.owners.getAll()
+        ]);
+        
+        setProperties(propertiesData || []);
+        setOwners(ownersData || []);
+      } catch (err) {
+        console.error('Error al cargar datos del dashboard:', err);
+        setError('Ocurrió un error al cargar los datos. Intente nuevamente.');
+      } finally {
+        setLoading(false);
       }
-    }
-  }, [router]);
+    };
+    
+    fetchDashboardData();
+  }, []);
 
-  const handleLogout = async () => {
-    await logout();
-  };
+  // Calcular estadísticas
+  const totalProperties = properties.length;
+  const totalValue = properties.reduce((sum, property) => sum + property.price, 0);
+  const totalOwners = owners.length;
+  const avgPropertyPrice = totalProperties > 0 
+    ? totalValue / totalProperties 
+    : 0;
 
-  if (!user) {
+  // Obtener las propiedades más recientes
+  const recentProperties = [...properties]
+    .sort((a, b) => {
+      // Ordenar por ID de forma descendente (asumiendo que IDs más altos son más recientes)
+      // Si tu sistema usa fechas, podrías usar: new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      return b.id.localeCompare(a.id);
+    })
+    .slice(0, 4);
+    
+  // Obtener los propietarios más recientes
+  const recentOwners = [...owners]
+    .sort((a, b) => {
+      // Ordenar por ID de forma descendente
+      return b.id.localeCompare(a.id);
+    })
+    .slice(0, 5);
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando...</p>
+      <div className='container mx-auto py-8'>
+        <div className='flex justify-center items-center py-12'>
+          <div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600'></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Million Web Dashboard
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                Bienvenido, {user.name}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                isLoading={isLoading}
-              >
-                Cerrar Sesión
+    <div className='container mx-auto py-8'>
+      <div className='flex justify-between items-center mb-8'>
+        <h1 className='text-3xl font-bold text-gray-900 dark:text-white'>
+          Dashboard
+        </h1>
+        {isAuthenticated && (
+          <div className='flex space-x-2'>
+            <Link href='/properties/new'>
+              <Button variant='outline' size='sm'>
+                Nueva Propiedad
               </Button>
-            </div>
+            </Link>
+            <Link href='/owners/new'>
+              <Button size='sm'>
+                Nuevo Propietario
+              </Button>
+            </Link>
           </div>
+        )}
+        {!isAuthenticated && (
+          <div className="text-sm text-gray-600 dark:text-gray-400 italic">
+            Inicia sesión para administrar propiedades y propietarios
+          </div>
+        )}
+      </div>
+
+      {error && (
+        <div className='bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6'>
+          <p className='text-red-800 dark:text-red-400'>{error}</p>
         </div>
-      </nav>
+      )}
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Card de bienvenida */}
-            <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <svg
-                      className="h-8 w-8 text-blue-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                        Usuario Activo
-                      </dt>
-                      <dd className="text-lg font-medium text-gray-900 dark:text-white">
-                        {user.email}
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
+      {/* Estadísticas mejoradas utilizando el componente DashboardStats */}
+      <div className='mb-8'>
+        <h2 className='text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4'>
+          Estadísticas Generales
+        </h2>
+        <DashboardStats />
+      </div>
+      
+      {/* Tarjetas de resumen */}
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
+        {/* Tarjeta: Total de propiedades */}
+        <div className='bg-white dark:bg-gray-800 shadow rounded-lg p-6 border-l-4 border-blue-500'>
+          <h3 className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+            Total de Propiedades
+          </h3>
+          <p className='text-3xl font-bold text-gray-900 dark:text-white mt-2'>
+            {totalProperties}
+          </p>
+          <Link href='/properties' className='text-blue-600 hover:underline text-sm mt-2 inline-block'>
+            Ver todas
+          </Link>
+        </div>
 
-            {/* Card de estado */}
-            <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <svg
-                      className="h-8 w-8 text-green-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                        Estado de Sesión
-                      </dt>
-                      <dd className="text-lg font-medium text-gray-900 dark:text-white">
-                        Activa
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Tarjeta: Valor total */}
+        <div className='bg-white dark:bg-gray-800 shadow rounded-lg p-6 border-l-4 border-green-500'>
+          <h3 className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+            Valor Total
+          </h3>
+          <p className='text-3xl font-bold text-gray-900 dark:text-white mt-2'>
+            {formatCurrency(totalValue)}
+          </p>
+        </div>
 
-            {/* Card de información */}
-            <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <svg
-                      className="h-8 w-8 text-purple-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                        ID de Usuario
-                      </dt>
-                      <dd className="text-lg font-medium text-gray-900 dark:text-white">
-                        {user.id}
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
+        {/* Tarjeta: Precio promedio */}
+        <div className='bg-white dark:bg-gray-800 shadow rounded-lg p-6 border-l-4 border-yellow-500'>
+          <h3 className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+            Precio Promedio
+          </h3>
+          <p className='text-3xl font-bold text-gray-900 dark:text-white mt-2'>
+            {formatCurrency(avgPropertyPrice)}
+          </p>
+        </div>
+
+        {/* Tarjeta: Total de propietarios */}
+        <div className='bg-white dark:bg-gray-800 shadow rounded-lg p-6 border-l-4 border-purple-500'>
+          <h3 className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+            Total de Propietarios
+          </h3>
+          <p className='text-3xl font-bold text-gray-900 dark:text-white mt-2'>
+            {totalOwners}
+          </p>
+          <Link href='/owners' className='text-blue-600 hover:underline text-sm mt-2 inline-block'>
+            Ver todos
+          </Link>
+        </div>
+      </div>
+
+      {/* Sección de propiedades y propietarios recientes */}
+      <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
+        {/* Propiedades recientes */}
+        <div className='bg-white dark:bg-gray-800 shadow rounded-lg p-6'>
+          <div className='flex justify-between items-center mb-6'>
+            <div>
+              <h2 className='text-xl font-semibold text-gray-900 dark:text-white'>
+                Propiedades Recientes
+              </h2>
+              <p className='text-sm text-gray-500 dark:text-gray-400 mt-1'>
+                Últimas propiedades agregadas al sistema
+              </p>
             </div>
+            {isAuthenticated ? (
+              <Link href='/properties'>
+                <Button variant='outline' size='sm'>
+                  Ver todas
+                </Button>
+              </Link>
+            ) : (
+              <span className="text-sm text-gray-500 dark:text-gray-400">Vista pública</span>
+            )}
           </div>
 
-          {/* Contenido principal */}
-          <div className="mt-8">
-            <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                  ¡Bienvenido al Dashboard!
-                </h3>
-                <div className="mt-2 max-w-xl text-sm text-gray-500 dark:text-gray-400">
-                  <p>
-                    Has iniciado sesión exitosamente. Este es un dashboard de demostración
-                    que muestra las funcionalidades implementadas:
+          {recentProperties.length > 0 ? (
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+              {recentProperties.map((property) => (
+                <PropertyCard 
+                  key={property.id} 
+                  property={property} 
+                  showActions={isAuthenticated}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className='text-center py-8 bg-gray-50 dark:bg-gray-900 rounded-lg border border-dashed border-gray-300 dark:border-gray-700'>
+              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No hay propiedades registradas</h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Comienza registrando tu primera propiedad en el sistema.
+              </p>
+              <div className="mt-4">
+                {isAuthenticated ? (
+                  <Link href='/properties/new'>
+                    <Button size="sm">
+                      <svg className="-ml-1 mr-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                      </svg>
+                      Registrar propiedad
+                    </Button>
+                  </Link>
+                ) : (
+                  <p className="text-sm text-blue-600 dark:text-blue-400">
+                    Inicia sesión para añadir propiedades
                   </p>
-                </div>
-                <div className="mt-5">
-                  <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                    <li>✅ Autenticación con React Hook Form y Zod</li>
-                    <li>✅ Validación de campos en tiempo real</li>
-                    <li>✅ Manejo de errores de API</li>
-                    <li>✅ Estados de carga y feedback visual</li>
-                    <li>✅ Diseño responsivo con Tailwind CSS</li>
-                    <li>✅ Accesibilidad (ARIA labels, roles, etc.)</li>
-                    <li>✅ Soporte para modo oscuro</li>
-                    <li>✅ TypeScript para tipado seguro</li>
-                  </ul>
-                </div>
+                )}
               </div>
             </div>
-          </div>
+          )}
         </div>
-      </main>
+
+        {/* Propietarios recientes */}
+        <div className='bg-white dark:bg-gray-800 shadow rounded-lg p-6'>
+          <div className='flex justify-between items-center mb-6'>
+            <div>
+              <h2 className='text-xl font-semibold text-gray-900 dark:text-white'>
+                Propietarios Recientes
+              </h2>
+              <p className='text-sm text-gray-500 dark:text-gray-400 mt-1'>
+                Últimos propietarios registrados
+              </p>
+            </div>
+            {isAuthenticated ? (
+              <Link href='/owners'>
+                <Button variant='outline' size='sm'>
+                  Ver todos
+                </Button>
+              </Link>
+            ) : (
+              <span className="text-sm text-gray-500 dark:text-gray-400">Vista pública</span>
+            )}
+          </div>
+
+          {recentOwners.length > 0 ? (
+            <div className='divide-y divide-gray-200 dark:divide-gray-700'>
+              {recentOwners.map((owner) => (
+                <div key={owner.id} className='flex items-center py-3 hover:bg-gray-50 dark:hover:bg-gray-700 px-2 rounded-md -mx-2'>
+                  <div className='flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300'>
+                    {owner.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className='ml-4 flex-grow'>
+                    <div className='text-sm font-medium text-gray-900 dark:text-white'>{owner.name}</div>
+                    <div className='text-sm text-gray-500 dark:text-gray-400'>{owner.address}</div>
+                  </div>
+                  {isAuthenticated ? (
+                    <Link href={`/owners/${owner.id}`} className='ml-2 flex-shrink-0'>
+                      <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </Link>
+                  ) : (
+                    <div className="ml-2 flex-shrink-0 text-sm text-gray-400">Propietario</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className='text-center py-8 bg-gray-50 dark:bg-gray-900 rounded-lg border border-dashed border-gray-300 dark:border-gray-700'>
+              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No hay propietarios registrados</h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Comienza registrando tu primer propietario en el sistema.
+              </p>
+              <div className="mt-4">
+                {isAuthenticated ? (
+                  <Link href='/owners/new'>
+                    <Button size="sm">
+                      <svg className="-ml-1 mr-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                      </svg>
+                      Registrar propietario
+                    </Button>
+                  </Link>
+                ) : (
+                  <p className="text-sm text-blue-600 dark:text-blue-400">
+                    Inicia sesión para añadir propietarios
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
