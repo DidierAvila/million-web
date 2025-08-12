@@ -87,6 +87,7 @@ export default function PropertyEditPage() {
 
         <PropertyForm
           onSubmit={handleSubmit}
+          onCancel={() => router.push('/properties')}
           initialData={property || undefined}
           isLoading={isLoading || isSaving}
         />

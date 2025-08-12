@@ -38,7 +38,11 @@ export default function NewPropertyPage() {
       )}
 
       <div className='bg-white dark:bg-gray-900 shadow rounded-lg p-6'>
-        <PropertyForm onSubmit={handleSubmit} isLoading={isSubmitting} />
+        <PropertyForm 
+          onSubmit={handleSubmit} 
+          onCancel={() => router.push('/properties')}
+          isLoading={isSubmitting} 
+        />
       </div>
     </div>
   );

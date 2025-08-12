@@ -44,7 +44,18 @@ const authClient = {
 
   register: async (userData: RegisterRequest): Promise<void> => {
     try {
-      await axiosInstance.post(API_ENDPOINTS.AUTH.REGISTER, userData);
+      console.log('Registrando usuario:', { ...userData, password: '***' });
+      
+      // Use the AuthService for registration
+      const { AuthService } = await import('@/services/auth');
+      const result = await AuthService.register(userData);
+      
+      if (!result) {
+        throw new Error('No se pudo completar el registro');
+      }
+      
+      // Registration successful
+      return;
     } catch (error) {
       console.error('Error al registrar usuario:', error);
       throw error;

@@ -12,7 +12,6 @@ interface PropertyFormValues {
   name: string;
   address: string;
   price: number;
-  taxes: number;
   year: number;
   internalCode?: string;
   idOwner: string;
@@ -20,12 +19,14 @@ interface PropertyFormValues {
 
 interface PropertyFormProps {
   onSubmit: (data: CreatePropertyDto | UpdatePropertyDto) => Promise<void>;
+  onCancel?: () => void;
   initialData?: PropertyDto;
   isLoading?: boolean;
 }
 
 export function PropertyForm({
   onSubmit,
+  onCancel,
   initialData,
   isLoading = false,
 }: PropertyFormProps) {
@@ -44,7 +45,6 @@ export function PropertyForm({
           name: initialData.name || '',
           address: initialData.address || '',
           price: initialData.price,
-          taxes: initialData.taxes,
           year: initialData.year,
           internalCode: initialData.internalCode || '',
           idOwner: initialData.idOwner || '',
@@ -59,7 +59,6 @@ export function PropertyForm({
     if (!data.name) errors.name = 'El nombre es requerido';
     if (!data.address) errors.address = 'La dirección es requerida';
     if (!data.price || data.price <= 0) errors.price = 'El precio debe ser mayor a 0';
-    if (data.taxes < 0) errors.taxes = 'Los impuestos no pueden ser negativos';
     if (!data.year) errors.year = 'El año es requerido';
     if (data.year < 1900 || data.year > new Date().getFullYear()) {
       errors.year = 'El año debe estar entre 1900 y ' + new Date().getFullYear();
@@ -92,7 +91,6 @@ export function PropertyForm({
       setValue('name', initialData.name || '');
       setValue('address', initialData.address || '');
       setValue('price', initialData.price);
-      setValue('taxes', initialData.taxes);
       setValue('year', initialData.year);
       setValue('internalCode', initialData.internalCode || '');
       setValue('idOwner', initialData.idOwner || '');
@@ -109,7 +107,6 @@ export function PropertyForm({
     const formattedData = {
       ...data,
       price: Number(data.price),
-      taxes: Number(data.taxes),
       year: Number(data.year),
     };
 
@@ -149,16 +146,6 @@ export function PropertyForm({
           min='0'
           {...register('price')}
           error={errors.price?.message}
-          required
-        />
-
-        <Input
-          label='Impuestos'
-          type='number'
-          step='0.01'
-          min='0'
-          {...register('taxes')}
-          error={errors.taxes?.message}
           required
         />
 
@@ -213,7 +200,7 @@ export function PropertyForm({
         <Button
           type='button'
           variant='outline'
-          onClick={() => reset()}
+          onClick={() => onCancel ? onCancel() : reset()}
           disabled={isLoading}
         >
           Cancelar

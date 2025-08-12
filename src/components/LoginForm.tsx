@@ -114,6 +114,22 @@ export function LoginForm() {
           >
             Iniciar sesión
           </Button>
+          
+          <div className="text-center mt-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              ¿No tienes una cuenta?{' '}
+              <a 
+                href="/register" 
+                className="text-blue-600 hover:underline dark:text-blue-400"
+                onClick={(e) => {
+                  e.preventDefault();
+                  router.push('/register');
+                }}
+              >
+                Regístrate
+              </a>
+            </p>
+          </div>
         </form>
       </div>
       <ToastContainer />

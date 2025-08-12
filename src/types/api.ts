@@ -23,8 +23,11 @@ export interface RegisterRequest {
   email: string;
   password: string;
   confirmPassword: string;
-  firstName: string;
+  name: string; // name en la API
   lastName: string;
+  role: string; // Admin, User
+  phone: string;
+  notificationType: string; // Email, Sms, Push
 }
 
 // Tipos para Owner
@@ -58,7 +61,6 @@ export interface PropertyDto {
   name: string;
   address: string;
   price: number;
-  taxes: number;
   year: number;
   internalCode?: string;
   idOwner: string; 

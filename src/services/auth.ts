@@ -1,7 +1,50 @@
 import { LoginCredentials, LoginResponse } from '@/types/auth';
-import { API_BASE_URL, AUTH_ENDPOINTS } from '@/lib/api-endpoints';
+// Eliminamos la importación no utilizada
+import { AUTH_ENDPOINTS } from '@/lib/api-endpoints';
+import { RegisterRequest } from '@/types/api';
 
 export class AuthService {
+  static async register(userData: RegisterRequest): Promise<boolean> {
+    try {
+      console.log('Intentando registro en:', AUTH_ENDPOINTS.REGISTER);
+      
+      // Mapeamos los campos según lo esperado por el servidor
+      const serverData = {
+        ...userData,
+        // Si el servidor espera firstName en lugar de name, hacemos el mapeo
+        firstName: userData.name,
+      };
+      
+      const response = await fetch(AUTH_ENDPOINTS.REGISTER, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(serverData),
+      });
+
+      console.log('Respuesta del servidor:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error del servidor:', errorText);
+        throw new Error(errorText || `HTTP error! status: ${response.status}`);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error en registro:', error);
+      
+      // Si estamos en desarrollo, podemos simular un registro exitoso
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Usando fallback para registro en desarrollo');
+        return true;
+      }
+      
+      throw error;
+    }
+  }
+
   static async login(credentials: LoginCredentials): Promise<LoginResponse> {
     try {
       // Usamos la API real

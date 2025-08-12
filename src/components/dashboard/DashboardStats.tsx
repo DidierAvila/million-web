@@ -69,18 +69,35 @@ export const DashboardStats = () => {
         if (totalProperties > 0) {
           avgPrice = properties.reduce((sum: number, prop: PropertyDto) => sum + prop.price, 0) / totalProperties;
         }
-
-        // Como no tenemos getByDateRange, usamos datos simulados para las estadísticas de trazas
-        // En un entorno de producción, deberías implementar getByDateRange en el API
-        const simulatedTraces = 5; // Dato simulado
-        const simulatedRecentTransactions = 2; // Dato simulado
+        
+        // Obtener todas las transacciones para cada propiedad
+        const allTransactions = [];
+        for (const property of properties) {
+          try {
+            const propertyTraces = await api.propertyTraces.getByPropertyId(property.id);
+            allTransactions.push(...propertyTraces);
+          } catch (err) {
+            console.error(`Error al cargar trazas para la propiedad ${property.id}:`, err);
+          }
+        }
+        
+        // Ordenar transacciones por fecha
+        allTransactions.sort((a, b) => new Date(b.dateSale).getTime() - new Date(a.dateSale).getTime());
+        
+        // Calcular transacciones recientes (últimos 30 días)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        const recentTransactions = allTransactions.filter(
+          trace => new Date(trace.dateSale) >= thirtyDaysAgo
+        ).length;
 
         setStats({
           totalProperties,
           totalOwners: owners?.length || 0,
           averagePrice: avgPrice,
-          totalSales: simulatedTraces,
-          recentTransactions: simulatedRecentTransactions,
+          totalSales: allTransactions.length,
+          recentTransactions: recentTransactions,
         });
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
@@ -165,7 +182,7 @@ export const DashboardStats = () => {
       />
 
       <StatsCard
-        title="Transacciones (30 días)"
+        title="Total Transacciones"
         value={stats.totalSales.toString()}
         icon={
           <svg
@@ -187,7 +204,7 @@ export const DashboardStats = () => {
       <StatsCard
         title="Transacciones Recientes"
         value={stats.recentTransactions.toString()}
-        description="últimos 7 días"
+        description="últimos 30 días"
         icon={
           <svg
             className="h-6 w-6 text-blue-600"

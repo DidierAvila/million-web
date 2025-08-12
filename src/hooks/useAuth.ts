@@ -3,12 +3,14 @@
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { api } from '@/lib/api-client';
+import { RegisterRequest } from '@/types/api';
 
 // Define el tipo para el contexto de autenticación
 interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (userData: RegisterRequest) => Promise<void>;
   logout: () => void;
 }
 
@@ -59,6 +61,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Función para registrar un nuevo usuario
+  const register = async (userData: RegisterRequest) => {
+    setLoading(true);
+    try {
+      await api.auth.register(userData);
+      router.push('/login');
+    } catch (error) {
+      console.error('Error en el registro:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Función para cerrar sesión
   const logout = () => {
     api.auth.logout();
@@ -68,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return React.createElement(
     AuthContext.Provider, 
-    { value: { isAuthenticated, loading, login, logout } },
+    { value: { isAuthenticated, loading, login, register, logout } },
     children
   );
 }
@@ -85,5 +101,7 @@ export function useAuth() {
 // Función para determinar si una ruta es pública
 function isPublicRoute(pathname: string | null) {
   const publicRoutes = ['/login', '/register', '/dashboard', '/'];
-  return publicRoutes.includes(pathname || '') || (pathname || '').startsWith('/dashboard');
+  return publicRoutes.includes(pathname || '') || 
+         (pathname || '').startsWith('/dashboard') ||
+         (pathname || '').startsWith('/register');
 }

@@ -54,9 +54,6 @@ export function PropertyDetail({
               <dt className='text-sm font-medium text-gray-500 dark:text-gray-400'>Precio</dt>
               <dd className='text-sm text-gray-900 dark:text-white'>{formatCurrency(property.price)}</dd>
               
-              <dt className='text-sm font-medium text-gray-500 dark:text-gray-400'>Impuestos</dt>
-              <dd className='text-sm text-gray-900 dark:text-white'>{formatCurrency(property.taxes)}</dd>
-              
               <dt className='text-sm font-medium text-gray-500 dark:text-gray-400'>Año</dt>
               <dd className='text-sm text-gray-900 dark:text-white'>{property.year}</dd>
               

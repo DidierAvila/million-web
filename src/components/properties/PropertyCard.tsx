@@ -31,10 +31,6 @@ export function PropertyCard({ property, showActions = true }: PropertyCardProps
         </div>
         
         <div className='text-sm text-gray-500 dark:text-gray-400 mb-4'>
-          <div className='flex justify-between mb-1'>
-            <span>Impuestos:</span>
-            <span>{formatCurrency(property.taxes)}</span>
-          </div>
           <div className='flex justify-between'>
             <span>Propietario:</span>
             <span className='font-medium'>{property.ownerName || 'N/A'}</span>
