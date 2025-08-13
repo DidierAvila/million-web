@@ -15,6 +15,7 @@ export class AuthService {
         firstName: userData.name,
       };
       
+      // Para register y login no necesitamos incluir el rol
       const response = await fetch(AUTH_ENDPOINTS.REGISTER, {
         method: 'POST',
         headers: {
@@ -51,6 +52,7 @@ export class AuthService {
       console.log('Intentando autenticación en:', AUTH_ENDPOINTS.LOGIN);
       console.log('Con credenciales:', { userName: credentials.userName, password: '***' });
       
+      // Para login no necesitamos incluir el rol
       const response = await fetch(AUTH_ENDPOINTS.LOGIN, {
         method: 'POST',
         headers: {
@@ -117,7 +119,7 @@ export class AuthService {
           firstName: userInfo?.firstName || userName.split(' ')[0] || '',
           lastName: userInfo?.lastName || userName.split(' ')[1] || '',
           userName: userEmail,
-          role: userRole
+          role: userInfo?.role || userRole || 'user' // Asegurar que siempre haya un rol por defecto
         };
         
         // Guardar en localStorage y emitir evento de autenticación

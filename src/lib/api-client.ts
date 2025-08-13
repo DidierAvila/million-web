@@ -18,12 +18,33 @@ const axiosInstance = axios.create({
   },
 });
 
-// Interceptor para añadir token a las solicitudes
+// Interceptor para añadir token y rol a las solicitudes
 if (typeof window !== 'undefined') {
   axiosInstance.interceptors.request.use((config) => {
+    // Obtener token de autenticación
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      
+      // Añadir el rol a los headers si no es una solicitud de autenticación
+      const isAuthEndpoint = 
+        config.url?.includes('/Authentication/Login') || 
+        config.url?.includes('/Authentication/Register');
+      
+      if (!isAuthEndpoint) {
+        // Obtener el rol del usuario desde localStorage
+        const userInfoStr = localStorage.getItem('userInfo');
+        if (userInfoStr) {
+          try {
+            const userInfo = JSON.parse(userInfoStr);
+            if (userInfo?.role) {
+              config.headers['X-User-Role'] = userInfo.role;
+            }
+          } catch (error) {
+            console.error('Error al obtener rol del usuario:', error);
+          }
+        }
+      }
     }
     return config;
   });

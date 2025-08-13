@@ -175,14 +175,14 @@ export default function NavBar() {
 
   return (
     <>
-    <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+    <nav className="bg-white dark:bg-[var(--neutral-900)] shadow-sm border-b border-[var(--neutral-200)] dark:border-[var(--neutral-700)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <Link href="/dashboard" className="flex items-center">
-                <span className="text-xl font-semibold text-blue-600">Million</span>
-                <span className="text-xl font-semibold text-gray-900 dark:text-white">Web</span>
+                <span className="text-xl font-semibold text-[var(--primary)]">Million</span>
+                <span className="text-xl font-semibold text-[var(--secondary)] dark:text-[var(--secondary-light)]">Web</span>
               </Link>
             </div>
             <div className="hidden md:block">
@@ -192,8 +192,8 @@ export default function NavBar() {
                   href="/dashboard"
                   className={cn(
                     pathname === '/dashboard'
-                      ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white',
+                      ? 'bg-[var(--primary-light)] bg-opacity-20 text-[var(--primary-dark)] dark:bg-[var(--primary-dark)] dark:bg-opacity-30 dark:text-[var(--primary-light)]'
+                      : 'text-[var(--neutral-600)] hover:bg-[var(--neutral-100)] hover:text-[var(--primary)] dark:text-[var(--neutral-300)] dark:hover:bg-[var(--neutral-800)] dark:hover:text-[var(--primary-light)]',
                     'px-3 py-2 rounded-md text-sm font-medium flex items-center'
                   )}
                   aria-current={pathname === '/dashboard' ? 'page' : undefined}
@@ -228,8 +228,8 @@ export default function NavBar() {
                       href={item.href}
                       className={cn(
                         isActive
-                          ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white',
+                          ? 'bg-[var(--primary-light)] bg-opacity-20 text-[var(--primary-dark)] dark:bg-[var(--primary-dark)] dark:bg-opacity-30 dark:text-[var(--primary-light)]'
+                          : 'text-[var(--neutral-600)] hover:bg-[var(--neutral-100)] hover:text-[var(--primary)] dark:text-[var(--neutral-300)] dark:hover:bg-[var(--neutral-800)] dark:hover:text-[var(--primary-light)]',
                         'px-3 py-2 rounded-md text-sm font-medium flex items-center'
                       )}
                       onClick={(e) => handleNavClick(item.href, e)}
@@ -260,7 +260,7 @@ export default function NavBar() {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[var(--secondary)] rounded-md hover:bg-[var(--secondary-dark)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--secondary-light)]"
                 >
                   Cerrar Sesión
                 </button>
@@ -268,7 +268,7 @@ export default function NavBar() {
             ) : (
               <Link
                 href="/login"
-                className="ml-4 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="ml-4 px-4 py-2 text-sm font-medium text-white bg-[var(--primary)] rounded-md hover:bg-[var(--primary-dark)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary-light)]"
               >
                 Iniciar Sesión
               </Link>
@@ -314,8 +314,8 @@ export default function NavBar() {
             onClick={handleNavigation}
             className={cn(
               pathname === '/dashboard'
-                ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white',
+                ? 'bg-[var(--primary-light)] bg-opacity-20 text-[var(--primary-dark)] dark:bg-[var(--primary-dark)] dark:bg-opacity-30 dark:text-[var(--primary-light)]'
+                : 'text-[var(--neutral-600)] hover:bg-[var(--neutral-100)] hover:text-[var(--primary)] dark:text-[var(--neutral-300)] dark:hover:bg-[var(--neutral-800)] dark:hover:text-[var(--primary-light)]',
               'block px-3 py-2 rounded-md text-base font-medium flex items-center'
             )}
             aria-current={pathname === '/dashboard' ? 'page' : undefined}
@@ -352,8 +352,8 @@ export default function NavBar() {
                 }}
                 className={cn(
                   isActive
-                    ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white',
+                    ? 'bg-[var(--primary-light)] bg-opacity-20 text-[var(--primary-dark)] dark:bg-[var(--primary-dark)] dark:bg-opacity-30 dark:text-[var(--primary-light)]'
+                    : 'text-[var(--neutral-600)] hover:bg-[var(--neutral-100)] hover:text-[var(--primary)] dark:text-[var(--neutral-300)] dark:hover:bg-[var(--neutral-800)] dark:hover:text-[var(--primary-light)]',
                   'block px-3 py-2 rounded-md text-base font-medium flex items-center'
                 )}
                 aria-current={isActive ? 'page' : undefined}
@@ -380,7 +380,7 @@ export default function NavBar() {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="w-full px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  className="w-full px-4 py-2 text-sm font-medium text-white bg-[var(--secondary)] rounded-md hover:bg-[var(--secondary-dark)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--secondary-light)]"
                 >
                   Cerrar Sesión
                 </button>
@@ -389,7 +389,7 @@ export default function NavBar() {
               <Link
                 href="/login"
                 onClick={handleNavigation}
-                className="w-full block px-4 py-2 text-sm font-medium text-center text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="w-full block px-4 py-2 text-sm font-medium text-center text-white bg-[var(--primary)] rounded-md hover:bg-[var(--primary-dark)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary-light)]"
               >
                 Iniciar Sesión
               </Link>

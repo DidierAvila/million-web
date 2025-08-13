@@ -5,13 +5,25 @@ import { useRouter, usePathname } from 'next/navigation';
 import { api } from '@/lib/api-client';
 import { RegisterRequest } from '@/types/api';
 
+// Define el tipo para la información del usuario
+interface UserInfo {
+  userId?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  userName?: string;
+  role?: string;
+}
+
 // Define el tipo para el contexto de autenticación
 interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
+  userInfo: UserInfo | null;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: RegisterRequest) => Promise<void>;
   logout: () => void;
+  getUserRole: () => string | undefined;
 }
 
 // Crea el contexto
@@ -23,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   // Comprobar el estado de autenticación al cargar
   useEffect(() => {
@@ -31,6 +44,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const auth = await api.auth.isAuthenticated();
         setIsAuthenticated(auth);
         
+        // Si está autenticado, obtener información del usuario
+        if (auth) {
+          const user = api.auth.getUserInfo();
+          setUserInfo(user);
+        } else {
+          setUserInfo(null);
+        }
+        
         // Redirigir si es necesario
         if (!auth && !isPublicRoute(pathname)) {
           router.push('/login');
@@ -38,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error('Error al verificar autenticación:', error);
         setIsAuthenticated(false);
+        setUserInfo(null);
       } finally {
         setLoading(false);
       }
@@ -50,9 +72,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (userName: string, password: string) => {
     setLoading(true);
     try {
-      await api.auth.login({ userName, password });
-      setIsAuthenticated(true);
-      router.push('/dashboard');
+      const result = await api.auth.login({ userName, password });
+      
+      if (result.success) {
+        setIsAuthenticated(true);
+        // Obtener información del usuario actualizada
+        const user = api.auth.getUserInfo();
+        setUserInfo(user);
+        router.push('/dashboard');
+      } else {
+        throw new Error(result.message || 'Error de autenticación');
+      }
     } catch (error) {
       console.error('Error de autenticación:', error);
       throw error;
@@ -79,12 +109,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     api.auth.logout();
     setIsAuthenticated(false);
+    setUserInfo(null);
     router.push('/login');
+  };
+
+  // Función para obtener el rol del usuario actual
+  const getUserRole = (): string | undefined => {
+    return userInfo?.role;
   };
 
   return React.createElement(
     AuthContext.Provider, 
-    { value: { isAuthenticated, loading, login, register, logout } },
+    { 
+      value: { 
+        isAuthenticated, 
+        loading, 
+        userInfo, 
+        login, 
+        register, 
+        logout, 
+        getUserRole 
+      } 
+    },
     children
   );
 }

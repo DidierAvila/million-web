@@ -18,7 +18,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'
+            className='block text-sm font-medium text-[var(--neutral-700)] dark:text-[var(--neutral-300)] mb-2'
           >
             {label} {required && <span className='text-red-500'>*</span>}
           </label>
@@ -28,10 +28,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           type={type}
           className={cn(
             'flex w-full rounded-md border px-3 py-2 text-sm',
-            'border-gray-300 dark:border-gray-600',
-            'bg-white dark:bg-gray-800',
-            'text-gray-900 dark:text-gray-100',
-            'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+            'border-[var(--neutral-300)] dark:border-[var(--neutral-600)]',
+            'bg-white dark:bg-[var(--neutral-800)]',
+            'text-[var(--neutral-900)] dark:text-[var(--neutral-100)]',
+            'focus:outline-none focus:ring-2 focus:ring-[var(--primary-light)] focus:border-transparent',
             'disabled:cursor-not-allowed disabled:opacity-50',
             error && 'border-red-500 focus:ring-red-500',
             className
@@ -50,7 +50,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         
         {description && !error && (
-          <p className='mt-1 text-sm text-gray-500 dark:text-gray-400' id={`${inputId}-description`}>
+          <p className='mt-1 text-sm text-[var(--neutral-500)] dark:text-[var(--neutral-400)]' id={`${inputId}-description`}>
             {description}
           </p>
         )}

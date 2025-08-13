@@ -10,12 +10,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500',
+        default: 'bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)] focus-visible:ring-[var(--primary-light)]',
         destructive: 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500',
-        outline: 'border border-gray-300 bg-transparent hover:bg-gray-100 text-gray-800 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-800',
-        secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 focus-visible:ring-gray-500 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600',
-        ghost: 'bg-transparent hover:bg-gray-100 text-gray-800 dark:text-gray-100 dark:hover:bg-gray-800',
-        link: 'bg-transparent underline-offset-4 hover:underline text-blue-600 hover:bg-transparent dark:text-blue-400',
+        outline: 'border border-[var(--neutral-300)] bg-transparent hover:bg-[var(--neutral-100)] text-[var(--neutral-800)] dark:border-[var(--neutral-700)] dark:text-[var(--neutral-100)] dark:hover:bg-[var(--neutral-800)]',
+        secondary: 'bg-[var(--secondary)] text-white hover:bg-[var(--secondary-dark)] focus-visible:ring-[var(--secondary-light)]',
+        accent: 'bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)] focus-visible:ring-[var(--accent-light)]',
+        ghost: 'bg-transparent hover:bg-[var(--neutral-100)] text-[var(--neutral-800)] dark:text-[var(--neutral-100)] dark:hover:bg-[var(--neutral-800)]',
+        link: 'bg-transparent underline-offset-4 hover:underline text-[var(--primary)] hover:bg-transparent dark:text-[var(--primary-light)]',
       },
       size: {
         default: 'h-10 py-2 px-4',

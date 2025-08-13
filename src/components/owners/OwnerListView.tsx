@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { OwnerDto } from '@/types/api';
 import { api } from '@/lib/api-client';
-import { formatDate } from '@/lib/formatters';
+// Eliminamos formatDate ya que no se utiliza
 import { Button } from '../ui/Button';
 import { ClientDate } from '../ui/ClientDate';
+import { OwnerService } from '@/services/owners';
 
 interface OwnerListProps {
   owners?: OwnerDto[];
@@ -21,13 +22,15 @@ export function OwnerList({ owners: initialOwners, onDelete }: OwnerListProps) {
   const [searchName, setSearchName] = useState<string>('');
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | undefined>(undefined);
 
-  const fetchOwners = async () => {
+  const fetchOwners = useCallback(async () => {
     if (initialOwners) return;
     
     try {
       setLoading(true);
-      const data = await api.owners.getAll();
+      // Usando el servicio actualizado que incluye el rol del usuario
+      const data = await OwnerService.getAll();
       setOwners(data);
       setError(null);
     } catch (err) {
@@ -36,7 +39,7 @@ export function OwnerList({ owners: initialOwners, onDelete }: OwnerListProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [initialOwners]); // Solo depende de initialOwners
   
   const handleNameSearch = async () => {
     if (!searchName.trim()) {
@@ -46,6 +49,8 @@ export function OwnerList({ owners: initialOwners, onDelete }: OwnerListProps) {
     
     setIsSearching(true);
     try {
+      // Para este caso seguimos usando la API original porque
+      // no hemos implementado el método getByName en nuestro servicio
       const results = await api.owners.getByName(searchName);
       setOwners(results);
       setError(null);
@@ -62,12 +67,37 @@ export function OwnerList({ owners: initialOwners, onDelete }: OwnerListProps) {
     fetchOwners();
   };
 
+  // Efecto para cargar propietarios
   useEffect(() => {
     fetchOwners();
+  }, [fetchOwners]); // Añadimos fetchOwners como dependencia
+  
+  // Efecto para obtener el rol del usuario
+  useEffect(() => {
+    // Obtenemos el rol del localStorage directamente
+    try {
+      if (typeof window !== 'undefined') {
+        const userInfoStr = localStorage.getItem('userInfo');
+        if (userInfoStr) {
+          const userInfo = JSON.parse(userInfoStr);
+          if (userInfo?.role) {
+            setUserRole(userInfo.role);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error al obtener el rol del usuario:', error);
+    }
   }, []);
 
   const handleDelete = async (id: string) => {
     if (!onDelete) return;
+    
+    // Verificar si el usuario tiene permisos para eliminar
+    if (!userRole || (userRole !== 'admin' && userRole !== 'superadmin')) {
+      setError('No tienes permisos para eliminar propietarios.');
+      return;
+    }
     
     setDeletingId(id);
     try {
@@ -81,6 +111,8 @@ export function OwnerList({ owners: initialOwners, onDelete }: OwnerListProps) {
     }
   };
 
+  // El rol del usuario ya está disponible en la variable userRole
+  
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -94,6 +126,18 @@ export function OwnerList({ owners: initialOwners, onDelete }: OwnerListProps) {
       <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
         <strong className="font-bold">Error: </strong>
         <span className="block sm:inline">{error}</span>
+      </div>
+    );
+  }
+  
+  // Verificar si el usuario tiene permisos para ver esta sección
+  if (!userRole) {
+    return (
+      <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative">
+        <strong className="font-bold">Acceso restringido: </strong>
+        <span className="block sm:inline">
+          No se puede verificar tu rol de usuario. Por favor, inicia sesión de nuevo.
+        </span>
       </div>
     );
   }
@@ -211,17 +255,24 @@ export function OwnerList({ owners: initialOwners, onDelete }: OwnerListProps) {
                   <ClientDate date={owner.birthDate} />
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2'>
+                  {/* Ver es accesible para todos los roles */}
                   <Link href={`/owners/${owner.id}`}>
                     <Button size='sm' variant='outline'>
                       Ver
                     </Button>
                   </Link>
-                  <Link href={`/owners/${owner.id}/edit`}>
-                    <Button size='sm' variant='outline'>
-                      Editar
-                    </Button>
-                  </Link>
-                  {onDelete && (
+                  
+                  {/* Editar solo para roles: admin, superadmin, agent */}
+                  {userRole && ['admin', 'superadmin', 'agent'].includes(userRole) && (
+                    <Link href={`/owners/${owner.id}/edit`}>
+                      <Button size='sm' variant='outline'>
+                        Editar
+                      </Button>
+                    </Link>
+                  )}
+                  
+                  {/* Eliminar solo para roles: admin, superadmin */}
+                  {onDelete && userRole && ['admin', 'superadmin'].includes(userRole) && (
                     <Button
                       size='sm'
                       variant='outline'
